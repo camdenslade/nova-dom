@@ -1,0 +1,1 @@
+The goal of this project is to familiarize myself with Typescript and continue practicing React.js as well as do a deep dive into the DOM. The stack for this project is currently Typescript, React.js, and AWS. May add a NoSQL database such as Firebase later on if I decide to support storing past website iterations.
