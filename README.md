@@ -1,0 +1,1 @@
+The goal of this project is to immerse myself into React.js and TypeScript and learn more about how the DOM functions and it's limitations.
