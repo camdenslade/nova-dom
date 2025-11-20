@@ -1,7 +1,7 @@
 // src/Renderer/SelectionOverlay.tsx
 import { useEffect, useState } from "react";
-import { useEditorStore } from "../Editor/EditorState";
-import { useElementRegistry } from "./hooks/useElementRegistry";
+import { useEditorStore } from "../Editor/EditorState.ts";
+import { useElementRegistry } from "./hooks/useElementRegistry.ts";
 
 export function SelectionOverlay() {
     const selectedId = useEditorStore((s) => s.selectedNodeId);
@@ -16,13 +16,13 @@ export function SelectionOverlay() {
 
     useEffect(() => {
         if (!selectedId) return;
-        const el = getElement(selectedId);
-        if (!el) {
+        const element = getElement(selectedId);
+        if (!element) {
             queueMicrotask(() => setRect(null));
             return;
         }
         const update = () => {
-            const r = el.getBoundingClientRect();
+                const r = element.getBoundingClientRect();
             queueMicrotask(() => setRect(r));
         };
 
