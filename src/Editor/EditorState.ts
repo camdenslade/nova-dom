@@ -1,74 +1,155 @@
 // src/Editor/EditorState.ts
+import type { DocumentTree } from "../Schema/DocumentTree";
+import type { AnyNode, NodeId } from "../Schema/Node";
 import { create } from "zustand";
-import type { Node } from "../Schema/Node.ts";
-import { nanoid } from "nanoid";
 
-type EditorState = {
-    root: Node;
-    selectedNodeId: string | null;
+export interface EditorState {
+    documentTree: DocumentTree;
+    selectedNodeId: NodeId | null;
+    hoveredNodeId: NodeId | null;
+    isEditingText: NodeId | null;
+    history: DocumentTree[];
+    historyIndex: number;
+    dispatch: (action: EditorAction) => void;
+}
 
-    select: (nodeId: string) => void;
-    updateNode: (nodeId: string, newProps: Partial<Node["props"]>) => void;
-    addNode: (parentId: string, newNode: Omit<Node, "id">) => void;
-    deleteNode: (nodeId: string) => void;
+export type EditorAction =
+    | { type: "SET_DOCUMENT_TREE"; payload: DocumentTree }
+    | { type: "SELECT_NODE"; payload: NodeId | null }
+    | { type: "SET_HOVER"; payload: NodeId | null }
+    | { type: "SET_EDITING_TEXT"; payload: NodeId | null }
+    | { type: "UNDO" }
+    | { type: "REDO" }
+    | { type: "UPDATE_NODE"; payload: AnyNode }
+    | { type: "ADD_NODE"; payload: AnyNode }
+    | { type: "DELETE_NODE"; payload: NodeId };
+
+function cloneDocumentTree(tree: DocumentTree): DocumentTree {
+    return JSON.parse(JSON.stringify(tree));
+}
+
+function pushHistory(state: EditorState, newTree: DocumentTree): EditorState {
+    const newHistory = state.history.slice(0, state.historyIndex + 1);
+    newHistory.push(cloneDocumentTree(newTree));
+    return {
+        ...state,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+    };
+}
+
+function reducer(state: EditorState, action: EditorAction): EditorState {
+    switch (action.type) {
+        case "SET_DOCUMENT_TREE":
+            return pushHistory({ ...state, documentTree: action.payload }, action.payload);
+
+        case "SELECT_NODE":
+            return { ...state, selectedNodeId: action.payload };
+
+        case "SET_HOVER":
+            return { ...state, hoveredNodeId: action.payload };
+
+        case "SET_EDITING_TEXT":
+            return { ...state, isEditingText: action.payload };
+
+        case "UNDO":
+            if (state.historyIndex > 0) {
+                const newIndex = state.historyIndex - 1;
+                return {
+                    ...state,
+                    documentTree: cloneDocumentTree(state.history[newIndex]),
+                    historyIndex: newIndex,
+                };
+            }
+            return state;
+
+        case "REDO":
+            if (state.historyIndex < state.history.length - 1) {
+                const newIndex = state.historyIndex + 1;
+                return {
+                    ...state,
+                    documentTree: cloneDocumentTree(state.history[newIndex]),
+                    historyIndex: newIndex,
+                };
+            }
+            return state;
+
+        case "UPDATE_NODE": {
+            const newTree = cloneDocumentTree(state.documentTree);
+            newTree.nodes[action.payload.id] = action.payload;
+            return pushHistory({ ...state, documentTree: newTree }, newTree);
+        }
+
+        case "ADD_NODE": {
+            const newTree = cloneDocumentTree(state.documentTree);
+            newTree.nodes[action.payload.id] = action.payload;
+            if (action.payload.parentId) {
+                const parent = newTree.nodes[action.payload.parentId];
+                parent.childrenIds.push(action.payload.id);
+            }
+            return pushHistory({ ...state, documentTree: newTree }, newTree);
+        }
+
+        case "DELETE_NODE": {
+            const newTree = cloneDocumentTree(state.documentTree);
+
+            function removeRecursively(id: NodeId) {
+                const node = newTree.nodes[id];
+                if (!node) return;
+                node.childrenIds.forEach(removeRecursively);
+                delete newTree.nodes[id];
+            }
+
+            const node = newTree.nodes[action.payload];
+            if (node?.parentId) {
+                const parent = newTree.nodes[node.parentId];
+                parent.childrenIds = parent.childrenIds.filter(id => id !== action.payload);
+            }
+
+            removeRecursively(action.payload);
+
+            return pushHistory({ ...state, documentTree: newTree }, newTree);
+        }
+
+        default:
+            return state;
+    }
+}
+
+const initialTree: DocumentTree = {
+    root: "root",
+    nodes: {
+        root: {
+            id: "root",
+            type: "container",
+            parentId: null,
+            childrenIds: ["text1"],
+            props: {
+                style: { padding: "20px" }
+            }
+        },
+        text1: {
+            id: "text1",
+            type: "text",
+            parentId: "root",
+            childrenIds: [],
+            props: {
+                text: "Hello World!",
+                style: { fontSize: "24px", color: "#000000" }
+            }
+        }
+    }
 };
 
-export const useEditorStore = create<EditorState>()((set, get) => ({
-    root: {
-        id: "root",
-        type: "container",
-        props: { style: {} },
-        children: [],
-    },
+
+export const useEditorStore = create<EditorState>()((set) => ({
+    documentTree: initialTree,
     selectedNodeId: null,
-    select: (nodeId: string) => set({ selectedNodeId: nodeId }),
-    updateNode: (nodeId: string, newProps: Partial<Node["props"]>) => {
-        const updateNodeRecursively = (node: Node): Node => {
-            if (node.id === nodeId) {
-                return { ...node, props: { ...node.props, ...newProps } };
-            }
-            if (node.children) {
-                return {
-                    ...node,
-                    children: node.children.map(updateNodeRecursively),
-                };
-            }
-            return node;
-        };
-        set({ root: updateNodeRecursively(get().root) });
-    },
-    addNode: (parentId: string, newNode: Omit<Node, "id">) => {
-        const addNodeRecursively = (node: Node): Node => {
-            if (node.id === parentId) {
-                return {
-                    ...node,
-                    children: [...(node.children || []), { ...newNode, id: nanoid() }],
-                };
-            }
-            if (node.children) {
-                return {
-                    ...node,
-                    children: node.children.map(addNodeRecursively),
-                };
-            }
-            return node;
-        };
-        set({ root: addNodeRecursively(get().root) });
-    },
-    deleteNode: (nodeId: string) => {
-        const deleteNodeRecursively = (node: Node): Node | null => {
-            if (node.id === nodeId) {
-                return null;
-            }
-            if (node.children) {
-                const updatedChildren = node.children
-                    .map(deleteNodeRecursively)
-                    .filter((child): child is Node => child !== null);
-                return { ...node, children: updatedChildren };
-            }
-            return node;
-        };
-        const updatedRoot = deleteNodeRecursively(get().root);
-        set({ root: updatedRoot || { id: "root", type: "container", props: { style: {} }, children: [] } });
+    hoveredNodeId: null,
+    isEditingText: null,
+    history: [cloneDocumentTree(initialTree)],
+    historyIndex: 0,
+    dispatch: (action: EditorAction) => {
+        set(state => reducer(state, action));
     },
 }));

@@ -1,7 +1,8 @@
 // src/Renderer/Renderer.tsx
-import type { Node } from "../Schema/Node.ts";
-import { renderNode } from "./renderNode.tsx";
+import { useEditorStore } from "../Editor/EditorState";
+import { renderNode } from "./renderNode";
 
-export function Renderer({ node }: { node: Node }): React.ReactNode {
-    return renderNode(node);
+export function Renderer() {
+    const tree = useEditorStore(s => s.documentTree);
+    return renderNode(tree.root, tree);
 }
