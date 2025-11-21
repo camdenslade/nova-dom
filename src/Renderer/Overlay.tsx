@@ -1,26 +1,34 @@
-// src/Renderer/SelectionOverlay.tsx
+// src/Renderer/Overlay.tsx
 import { useEffect, useState } from "react";
 import { useEditorStore } from "../Editor/EditorState";
 import { useElementRegistry } from "./hooks/useElementRegistry";
 
-export function SelectionOverlay() {
-    const selectedId = useEditorStore((s) => s.selectedNodeId);
+function OverlayBox({
+    nodeId,
+    border,
+    zIndex
+}: {
+    nodeId: string | null;
+    border: string;
+    zIndex: number;
+}) {
     const getElement = useElementRegistry((s) => s.getElement);
     const [rect, setRect] = useState<DOMRect | null>(null);
 
     useEffect(() => {
-        if (!selectedId) {
+        if (!nodeId) {
             queueMicrotask(() => setRect(null));
         }
-    }, [selectedId]);
+    }, [nodeId]);
 
     useEffect(() => {
-        if (!selectedId) return;
-        const el = getElement(selectedId);
+        if (!nodeId) return;
+        const el = getElement(nodeId);
         if (!el) {
             queueMicrotask(() => setRect(null));
             return;
         }
+
         const update = () => {
             const r = el.getBoundingClientRect();
             queueMicrotask(() => setRect(r));
@@ -34,22 +42,43 @@ export function SelectionOverlay() {
             window.removeEventListener("resize", update);
             window.removeEventListener("scroll", update, true);
         };
-    }, [selectedId, getElement]);
+    }, [nodeId, getElement]);
 
     if (!rect) return null;
+
     return (
         <div
             style={{
                 position: "fixed",
-                top: rect.top - 2,
-                left: rect.left - 2,
-                width: rect.width + 4,
-                height: rect.height + 4,
-                border: "2px solid #4A90E2",
+                top: rect.top - 1,
+                left: rect.left - 1,
+                width: rect.width + 2,
+                height: rect.height + 2,
+                border,
                 pointerEvents: "none",
-                zIndex: 9999,
+                zIndex,
                 borderRadius: 4,
             }}
         />
+    );
+}
+
+export function Overlay() {
+    const selectedId = useEditorStore((s) => s.selectedNodeId);
+    const hoveredId = useEditorStore((s) => s.hoveredNodeId);
+
+    return (
+        <>
+            <OverlayBox
+                nodeId={hoveredId}
+                border="1px dashed #4A90E2"
+                zIndex={9998}
+            />
+            <OverlayBox
+                nodeId={selectedId}
+                border="2px solid #4A90E2"
+                zIndex={9999}
+            />
+        </>
     );
 }

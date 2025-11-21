@@ -10,16 +10,21 @@ type ElementRegistry = {
 
 export const useElementRegistry = create<ElementRegistry>()((set, get) => ({
     elements: new Map(),
-    registerElement: (id, element) => set((state) => {
-        const next = new Map(state.elements);
-        if (element) next.set(id, element);
-        else next.delete(id);
-        return { elements: next };
-    }),
-    unregisterElement: (id) => set((state) => {
-        const next = new Map(state.elements);
-        next.delete(id);
-        return { elements: next };
-    }),
+
+    registerElement: (id, element) =>
+        set((state) => {
+            const next = new Map(state.elements);
+            if (element) next.set(id, element);
+            else next.delete(id);
+            return { elements: next };
+        }),
+
+    unregisterElement: (id) =>
+        set((state) => {
+            const next = new Map(state.elements);
+            next.delete(id);
+            return { elements: next };
+        }),
+
     getElement: (id) => get().elements.get(id),
 }));
