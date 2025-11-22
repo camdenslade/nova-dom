@@ -1,7 +1,7 @@
 // src/Renderer/Overlay.tsx
 import { useEffect, useState } from "react";
-import { useEditorStore } from "../Editor/EditorState";
-import { useElementRegistry } from "./hooks/useElementRegistry";
+import { useEditorStore } from "../Editor/EditorState.ts";
+import { useElementRegistry } from "./hooks/useElementRegistry.ts";
 
 function OverlayBox({
     nodeId,

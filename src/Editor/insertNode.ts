@@ -1,6 +1,6 @@
 // src/Editor/insertNode.ts
-import { useEditorStore } from "./EditorState";
-import type { AnyNode, NodeId } from "../Schema/Node";
+import { useEditorStore } from "./EditorState.ts";
+import type { AnyNode, NodeId } from "../Schema/Node.ts";
 
 export type InsertPosition =
     | "start"

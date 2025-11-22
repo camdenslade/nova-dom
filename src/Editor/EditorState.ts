@@ -1,6 +1,6 @@
 // src/Editor/EditorState.ts
-import type { DocumentTree } from "../Schema/DocumentTree";
-import type { AnyNode, NodeId } from "../Schema/Node";
+import type { DocumentTree } from "../Schema/DocumentTree.ts";
+import type { AnyNode, NodeId } from "../Schema/Node.ts";
 import { create } from "zustand";
 
 export interface EditorState {
@@ -8,6 +8,9 @@ export interface EditorState {
     selectedNodeId: NodeId | null;
     hoveredNodeId: NodeId | null;
     isEditingText: NodeId | null;
+    draggingNodeId: NodeId | null
+    dragOverNodeId: NodeId | null
+    dragPosition: "before" | "after" | "inside" | null
     history: DocumentTree[];
     historyIndex: number;
     dispatch: (action: EditorAction) => void;
@@ -18,6 +21,9 @@ export type EditorAction =
     | { type: "SELECT_NODE"; payload: NodeId | null }
     | { type: "SET_HOVER"; payload: NodeId | null }
     | { type: "SET_EDITING_TEXT"; payload: NodeId | null }
+    | { type: "SET_DRAGGING"; payload: NodeId | null }
+    | { type: "SET_DRAG_OVER"; payload: { nodeId: NodeId | null; position: "before" | "after" | "inside" | null } }
+    | { type: "CLEAR_DRAG" }
     | { type: "UNDO" }
     | { type: "REDO" }
     | { type: "UPDATE_NODE"; payload: AnyNode }
@@ -51,6 +57,20 @@ function reducer(state: EditorState, action: EditorAction): EditorState {
 
         case "SET_EDITING_TEXT":
             return { ...state, isEditingText: action.payload };
+
+        case "SET_DRAGGING":
+            return { ...state, draggingNodeId: action.payload };
+
+        case "SET_DRAG_OVER":
+            return {
+                ...state,
+                dragOverNodeId: action.payload.nodeId,
+                dragPosition: action.payload.position,
+            };
+
+        case "CLEAR_DRAG":
+            return { ...state, draggingNodeId: null, dragOverNodeId: null, dragPosition: null };
+
 
         case "UNDO":
             if (state.historyIndex > 0) {
@@ -147,6 +167,9 @@ export const useEditorStore = create<EditorState>()((set) => ({
     selectedNodeId: null,
     hoveredNodeId: null,
     isEditingText: null,
+    draggingNodeId: null,
+    dragOverNodeId: null,
+    dragPosition: null,
     history: [cloneDocumentTree(initialTree)],
     historyIndex: 0,
     dispatch: (action: EditorAction) => {
