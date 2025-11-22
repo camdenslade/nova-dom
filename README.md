@@ -7,7 +7,7 @@
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)
 
 A lightweight, modern, TypeScript-first DOM editing engine for React.
-Build visual editors, page builders, no-code tools, layout builders, or custom Webflow-like tools with a clean and extendable API.
+Build visual editors, page builders, no-code tools, layout builders, or custom Webflow-like tools with a clean, lightweight and extendable API.
 
 ## Features:
 • Fast + Modern Renderer (recursive, optimized, typed)
