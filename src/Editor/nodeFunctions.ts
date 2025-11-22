@@ -9,7 +9,7 @@ import type {
     InputNode,
     LinkNode,
     ElementNode,
-} from "../Schema/Node";
+} from "../Schema/Node.ts";
 
 function id(): NodeId {
     return Math.random().toString(36).slice(2, 10);

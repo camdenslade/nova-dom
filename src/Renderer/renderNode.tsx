@@ -1,9 +1,10 @@
 // src/Renderer/renderNode.tsx
 import React from "react";
-import type { NodeId } from "../Schema/Node";
-import type { DocumentTree } from "../Schema/DocumentTree";
-import { useEditorStore } from "../Editor/EditorState";
-import { useElementRegistry } from "./hooks/useElementRegistry";
+import type { NodeId } from "../Schema/Node.ts";
+import type { DocumentTree } from "../Schema/DocumentTree.ts";
+import { useEditorStore } from "../Editor/EditorState.ts";
+import { useElementRegistry } from "./hooks/useElementRegistry.ts";
+import { reorderNode } from "../Editor/reorderNode.ts";
 
 export function renderNode(id: NodeId, tree: DocumentTree): React.ReactNode {
     const node = tree.nodes[id];
@@ -161,6 +162,43 @@ export function renderNode(id: NodeId, tree: DocumentTree): React.ReactNode {
                 stop(e);
                 unhover();
             }}
+            onMouseDown={(e) => {
+                stop(e);
+                const store = useEditorStore.getState();
+                if (store.isEditingText) return;
+                store.dispatch({ type: "SET_DRAGGING", payload: id });
+            }}
+            onMouseMove={(e) => {
+                const store = useEditorStore.getState();
+                if (!store.draggingNodeId) return;
+                if (store.draggingNodeId === id) {
+                    store.dispatch({
+                        type: "SET_DRAG_OVER",
+                        payload: { nodeId: null, position: null }
+                    });
+                    return;
+                }
+                const el = useElementRegistry.getState().getElement(id);
+                if (!el) return;
+                const rect = el.getBoundingClientRect();
+                let position: "before" | "after" | "inside";
+                if (e.clientY < rect.top + 6) position = "before";
+                else if (e.clientY > rect.bottom - 6) position = "after";
+                else position = "inside";
+                store.dispatch({ type: "SET_DRAG_OVER", payload: { nodeId: id, position }});
+            }}
+            onMouseUp={() => {
+                const store = useEditorStore.getState();
+                const dragging = store.draggingNodeId;
+                const over = store.dragOverNodeId;
+                const pos = store.dragPosition;
+                if (dragging && over && pos) {
+                    reorderNode(dragging, over, pos);
+                }
+                store.dispatch({ type: "CLEAR_DRAG" });
+            }}
+
+
             style={{ position: "relative" }}
         >
             {el}
