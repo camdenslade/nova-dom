@@ -32,7 +32,7 @@ Features:
 
 Installation:
 npm install nova-dom
-# or
+or
 yarn add nova-dom
 
 Basic Usage:
