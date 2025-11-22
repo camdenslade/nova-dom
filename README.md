@@ -9,7 +9,7 @@
 A lightweight, modern, TypeScript-first DOM editing engine for React.
 Build visual editors, page builders, no-code tools, layout builders, or custom Webflow-like tools with a clean and extendable API.
 
-Features:
+## Features:
 • Fast + Modern Renderer (recursive, optimized, typed)
 
 • Flat DocumentTree model (like Figma/Webflow: scalable + easy diffing)
@@ -30,12 +30,12 @@ Features:
 
 • Style inspector & CSS box model tools (coming soon)
 
-Installation:
+## Installation:
 npm install nova-dom
 or
 yarn add nova-dom
 
-Basic Usage:
+## Basic Usage:
 import { Renderer, Overlay } from "nova-dom";
 import { useEditorStore } from "nova-dom/EditorState";
 
@@ -50,7 +50,7 @@ export default function Canvas() {
   );
 }
 
-Architecture
+## Architecture
 - nova-dom uses a flat document model:
 
 interface DocumentTree {
@@ -59,7 +59,7 @@ interface DocumentTree {
 }
 
 
-Each node contains:
+## Each node contains:
 
 interface Node {
   id: string;
@@ -70,13 +70,13 @@ interface Node {
 }
 
 
-This enables:
+## This enables:
 - fast cloning
 - easy undo/redo
 - efficient tree diffing
 - portable serialization
 
-Roadmap
+## Roadmap
 v0.2.0:
 - Live resize handles
 - Resize overlay panel
@@ -104,8 +104,8 @@ v1.0.0:
 - Full documentation
 - Full demo app
 
-Contributing:
+## Contributing:
 - See CONTRIBUTING.md
 
-License:
+## License:
 - MIT
