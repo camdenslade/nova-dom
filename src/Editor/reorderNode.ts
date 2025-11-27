@@ -1,7 +1,7 @@
 // src/Editor/reorderNode.ts
-import { useEditorStore } from "./EditorState.ts";
-import { insertNode } from "./insertNode.ts";
-import type { NodeId } from "../Schema/Node.ts";
+import { useEditorStore } from "./EditorState";
+import { insertNode } from "./insertNode";
+import type { NodeId } from "../Schema/Node";
 
 export function reorderNode(
     nodeId: NodeId,
@@ -15,19 +15,36 @@ export function reorderNode(
 
     const dragged = tree.nodes[nodeId];
     if (!dragged) return;
+
+    const target = tree.nodes[targetId];
+    if (!target) return;
+
+    let illegal = false;
+    const walk = (id: NodeId) => {
+        if (id === nodeId) {
+            illegal = true;
+            return;
+        }
+        const child = tree.nodes[id];
+        if (!child) return;
+        child.childrenIds.forEach(walk);
+    };
+
+    walk(targetId);
+    if (illegal) return;
     if (dragged.parentId) {
         const parent = tree.nodes[dragged.parentId];
-        parent.childrenIds = parent.childrenIds.filter(id => id !== nodeId);
-        store.dispatch({
-            type: "UPDATE_NODE",
-            payload: { ...parent }
-        });
+        const updatedParent = {
+            ...parent,
+            childrenIds: parent.childrenIds.filter(id => id !== nodeId),
+        };
+        store.dispatch({ type: "UPDATE_NODE", payload: updatedParent });
     }
-
     const insertParent =
         position === "inside"
             ? targetId
             : tree.nodes[targetId].parentId;
+
     const insertPos =
         position === "before" || position === "after"
             ? position

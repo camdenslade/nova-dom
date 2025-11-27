@@ -143,9 +143,9 @@ const initialTree: DocumentTree = {
             id: "root",
             type: "container",
             parentId: null,
-            childrenIds: ["text1"],
+            childrenIds: ["text1", "box1"],
             props: {
-                style: { padding: "20px" }
+                style: { padding: "20px", display: "flex", flexDirection: "column", gap: "20px" }
             }
         },
         text1: {
@@ -154,8 +154,22 @@ const initialTree: DocumentTree = {
             parentId: "root",
             childrenIds: [],
             props: {
-                text: "Hello World!",
-                style: { fontSize: "24px", color: "#000000" }
+                text: "Try resizing the blue box below:",
+                style: { fontSize: "16px", color: "#333" }
+            }
+        },
+        box1: {
+            id: "box1",
+            type: "container",
+            parentId: "root",
+            childrenIds: [],
+            props: {
+                style: { 
+                    width: "100px", 
+                    height: "100px", 
+                    backgroundColor: "#ff0055",
+                    border: "2px solid #333" 
+                }
             }
         }
     }
