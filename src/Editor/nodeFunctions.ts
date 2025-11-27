@@ -1,4 +1,4 @@
-// src/Editor/nodeFactories.ts
+// src/Editor/nodeFunctions.ts
 import type {
     NodeId,
     TextNode,
