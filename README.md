@@ -12,14 +12,23 @@ Build visual editors, page builders, no-code tools, layout builders, or custom W
 
 ## Features:
 • Fast + Modern Renderer (recursive, optimized, typed)
+
 • Flat DocumentTree model (like Figma/Webflow: scalable + easy diffing)
+
 • Selection + Hover overlays (Webflow-style UX)
+
 • Inline text editing (contentEditable)
+
 • Undo / Redo stack (history-safe reducer architecture)
+
 • Composable Node Types (text, container, button, image, element)
+
 • Tree editing utilities (insert, delete, update)
+
 • Resizable DOM (coming soon)
+
 • Drag + drop reordering (coming soon)
+
 • Style inspector & CSS box model tools (coming soon)
 
 ## Installation:
