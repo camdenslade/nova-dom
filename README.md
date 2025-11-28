@@ -4,6 +4,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)
 ![React](https://img.shields.io/badge/React-18-61dafb?logo=react)
 ![Zustand](https://img.shields.io/badge/Zustand-State%20Store-orange)
+![Vite](https://img.shields.io/badge/vite-7.2.2-646cff?logo=vite)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)
 
 A lightweight, modern, TypeScript-first DOM editing engine for React.
@@ -11,23 +12,14 @@ Build visual editors, page builders, no-code tools, layout builders, or custom W
 
 ## Features:
 • Fast + Modern Renderer (recursive, optimized, typed)
-
 • Flat DocumentTree model (like Figma/Webflow: scalable + easy diffing)
-
 • Selection + Hover overlays (Webflow-style UX)
-
 • Inline text editing (contentEditable)
-
 • Undo / Redo stack (history-safe reducer architecture)
-
 • Composable Node Types (text, container, button, image, element)
-
 • Tree editing utilities (insert, delete, update)
-
 • Resizable DOM (coming soon)
-
 • Drag + drop reordering (coming soon)
-
 • Style inspector & CSS box model tools (coming soon)
 
 ## Installation:
