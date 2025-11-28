@@ -3,7 +3,7 @@
 ![MIT License](https://img.shields.io/badge/license-MIT-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)
 ![React](https://img.shields.io/badge/React-19.2-61dafb?logo=react)
-![Zustand](https://img.shields.io/badge/Zustand-State-5.0.8%20Store-orange)
+![Zustand](https://img.shields.io/badge/Zustand-State-5.0.8-%20Store-orange)
 ![Vite](https://img.shields.io/badge/vite-7.2.2-646cff?logo=vite)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)
 
