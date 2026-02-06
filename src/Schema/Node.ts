@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 export type NodeId = string;
 export interface Node {
     id: NodeId;
-    type: "text" | "image" | "video" | "container" | "button" | "input" | "link" | "element";
+    type: "text" | "image" | "video" | "container" | "button" | "input" | "link" | "element" | "component";
     parentId: NodeId | null;
     childrenIds: NodeId[];
     props: {style?: CSSProperties; [key: string]: unknown};
@@ -66,4 +66,11 @@ export interface ElementNode extends Node {
         tag: string;
     };
 }
-export type AnyNode = | TextNode | ImageNode | VideoNode | ContainerNode | ButtonNode | InputNode | LinkNode | ElementNode;
+export interface ComponentInstanceNode extends Node {
+    type: "component";
+    props: Node["props"] & {
+        componentId: string;
+        overrides: Record<string, unknown>;
+    };
+}
+export type AnyNode = | TextNode | ImageNode | VideoNode | ContainerNode | ButtonNode | InputNode | LinkNode | ElementNode | ComponentInstanceNode;

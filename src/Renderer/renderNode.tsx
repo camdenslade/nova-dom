@@ -6,6 +6,9 @@ import { useEditorStore } from "../Editor/EditorState.ts";
 import { useElementRegistry } from "./hooks/useElementRegistry.ts";
 import { reorderNode } from "../Editor/reorderNode.ts";
 import { SelectionControls } from "./SelectionControls.tsx";
+import { resolveComponentInstance } from "../Editor/componentFunctions.ts";
+import { useCustomNodeRegistry } from "../Editor/CustomNodeRegistry.ts";
+import type { ComponentInstanceNode } from "../Schema/Node.ts";
 
 export function renderNode(id: NodeId, tree: DocumentTree, selectedNodeId: NodeId | null): React.ReactNode {
     const node = tree.nodes[id];
@@ -82,16 +85,78 @@ export function renderNode(id: NodeId, tree: DocumentTree, selectedNodeId: NodeI
         }
         
         case "image": el = <img src={node.props.src} alt={node.props.alt ?? ""} {...commonProps} />; break;
-        case "video": el = <video src={node.props.src} controls {...commonProps} />; break;
-        case "input": el = <input value={node.props.value ?? ""} placeholder={node.props.placeholder} {...commonProps} />; break;
-        case "button": el = <button {...commonProps}>{wrapChildren()}</button>; break;
-        case "link": el = <a href={node.props.href} {...commonProps}>{wrapChildren()}</a>; break;
+        case "video": el = (
+            <video
+                src={node.props.src}
+                controls={node.props.controls ?? true}
+                autoPlay={node.props.autoplay ?? false}
+                loop={node.props.loop ?? false}
+                muted={node.props.muted ?? false}
+                {...commonProps}
+            />
+        ); break;
+        case "input": el = (
+            <input
+                type={node.props.inputType ?? "text"}
+                value={node.props.value ?? ""}
+                placeholder={node.props.placeholder}
+                onChange={(e) => {
+                    dispatch({
+                        type: "UPDATE_NODE",
+                        payload: { ...node, props: { ...node.props, value: e.target.value } },
+                    });
+                }}
+                {...commonProps}
+            />
+        ); break;
+        case "button": el = <button onClick={(e) => e.preventDefault()} {...commonProps}>{wrapChildren()}</button>; break;
+        case "link": el = (
+            <a
+                href={node.props.href}
+                target={node.props.target ?? "_self"}
+                onClick={(e) => e.preventDefault()}
+                {...commonProps}
+            >
+                {wrapChildren()}
+            </a>
+        ); break;
         case "element": el = React.createElement(node.props.tag, { ...commonProps }, wrapChildren()); break;
-        
+
+        case "component": {
+            const resolved = resolveComponentInstance(node as ComponentInstanceNode);
+            if (!resolved) {
+                el = <div style={{ border: "2px dashed red", padding: 8, color: "red", fontSize: 12 }}>Missing component</div>;
+            } else {
+                // Render the resolved component subtree inline
+                const renderResolved = (nodeId: NodeId, nodes: Record<string, import("../Schema/Node.ts").AnyNode>): React.ReactNode => {
+                    const n = nodes[nodeId];
+                    if (!n) return null;
+                    const childContent = n.childrenIds.map((cid) => renderResolved(cid, nodes));
+                    const tag = n.type === "text" ? "span" : n.type === "image" ? "img" : n.type === "container" ? "div" : "div";
+                    if (n.type === "text") return <span key={n.id} style={n.props.style}>{n.props.text as string}{childContent}</span>;
+                    if (n.type === "image") return <img key={n.id} src={n.props.src as string} alt={(n.props.alt as string) ?? ""} style={n.props.style} />;
+                    return React.createElement(tag, { key: n.id, style: n.props.style }, childContent);
+                };
+                el = <div {...commonProps}>{renderResolved(resolved.rootNodeId, resolved.nodes)}</div>;
+            }
+            break;
+        }
+
         case "container":
-        default:
             el = <div {...commonProps}>{wrapChildren()}</div>;
             break;
+
+        default: {
+            const nodeType = (node as import("../Schema/Node.ts").AnyNode).type;
+            const customDef = useCustomNodeRegistry.getState().customTypes[nodeType];
+            if (customDef) {
+                const CustomRenderer = customDef.renderer;
+                el = <CustomRenderer node={node as import("../Schema/Node.ts").AnyNode}>{wrapChildren()}</CustomRenderer>;
+            } else {
+                el = <div {...commonProps}>{wrapChildren()}</div>;
+            }
+            break;
+        }
     }
 
     return (

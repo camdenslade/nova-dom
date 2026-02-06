@@ -33,30 +33,35 @@ export function DragOverlay() {
     if (dragPosition === "inside") {
         style = {
             ...style,
-            top: rect.top - 1,
-            left: rect.left - 1,
-            width: rect.width + 2,
-            height: rect.height + 2,
-            border: "2px dashed blue",
+            top: rect.top - 2,
+            left: rect.left - 2,
+            width: rect.width + 4,
+            height: rect.height + 4,
+            border: "2px dashed #0d99ff",
             borderRadius: 4,
+            backgroundColor: "rgba(13, 153, 255, 0.08)",
         };
     } else if (dragPosition === "before") {
         style = {
             ...style,
-            top: rect.top - 4,
+            top: rect.top - 2,
             left: rect.left,
             width: rect.width,
-            height: 0,
-            borderTop: "4px solid blue",
+            height: 4,
+            backgroundColor: "#0d99ff",
+            borderRadius: 2,
+            boxShadow: "0 0 6px rgba(13, 153, 255, 0.6)",
         };
     } else if (dragPosition === "after") {
         style = {
             ...style,
-            top: rect.bottom,
+            top: rect.bottom - 2,
             left: rect.left,
             width: rect.width,
-            height: 0,
-            borderTop: "4px solid blue",
+            height: 4,
+            backgroundColor: "#0d99ff",
+            borderRadius: 2,
+            boxShadow: "0 0 6px rgba(13, 153, 255, 0.6)",
         };
     }
     return <div style={style} />;

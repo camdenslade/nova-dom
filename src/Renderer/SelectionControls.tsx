@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useEditorStore } from "../Editor/EditorState.ts";
 import { useElementRegistry } from "./hooks/useElementRegistry.ts";
 import type { AnyNode } from "../Schema/Node.ts";
+import { computeSnap } from "./hooks/useSnapEngine.ts";
 
 const VISIBLE_SIZE = 10;
 const HIT_AREA_SIZE = 20;
@@ -69,10 +70,23 @@ function ResizeHandle({ position, onMouseDown }: { position: HandlePosition; onM
     );
 }
 
+function getOtherRects(excludeId: string) {
+    const registry = useElementRegistry.getState();
+    const tree = useEditorStore.getState().documentTree;
+    const rects: { id: string; rect: DOMRect }[] = [];
+    for (const id of Object.keys(tree.nodes)) {
+        if (id === excludeId) continue;
+        const el = registry.getElement(id);
+        if (el) rects.push({ id, rect: el.getBoundingClientRect() });
+    }
+    return rects;
+}
+
 export function SelectionControls({ nodeId }: { nodeId: string }) {
     const getElement = useElementRegistry((s) => s.getElement);
     const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
     const [paddings, setPaddings] = useState<string>("0px");
+    const [margins, setMargins] = useState<{ top: number; right: number; bottom: number; left: number }>({ top: 0, right: 0, bottom: 0, left: 0 });
 
     useEffect(() => {
         const wrapper = getElement(nodeId);
@@ -83,6 +97,14 @@ export function SelectionControls({ nodeId }: { nodeId: string }) {
             const computed = window.getComputedStyle(target);
             const p = `${computed.paddingTop} ${computed.paddingRight} ${computed.paddingBottom} ${computed.paddingLeft}`;
             setPaddings(p);
+
+            const wrapperComputed = window.getComputedStyle(wrapper);
+            setMargins({
+                top: parseFloat(wrapperComputed.marginTop) || 0,
+                right: parseFloat(wrapperComputed.marginRight) || 0,
+                bottom: parseFloat(wrapperComputed.marginBottom) || 0,
+                left: parseFloat(wrapperComputed.marginLeft) || 0,
+            });
         };
         updateBoxModel();
         window.addEventListener("resize", updateBoxModel);
@@ -126,13 +148,27 @@ export function SelectionControls({ nodeId }: { nodeId: string }) {
                     moveEvent.preventDefault();
                 }
 
-                el.style.left = `${startLeft + dx}px`;
-                el.style.top = `${startTop + dy}px`;
+                const proposedLeft = startLeft + dx;
+                const proposedTop = startTop + dy;
+                const rect = el.getBoundingClientRect();
+                const otherRects = getOtherRects(nodeId);
+                const snap = computeSnap(
+                    { left: rect.left + (proposedLeft - startLeft - (parseFloat(el.style.left) || 0) + startLeft), top: rect.top + (proposedTop - startTop - (parseFloat(el.style.top) || 0) + startTop), width: rect.width, height: rect.height },
+                    otherRects
+                );
+
+                const snapDx = snap.snappedX - (rect.left + (proposedLeft - (parseFloat(el.style.left) || 0)));
+                const snapDy = snap.snappedY - (rect.top + (proposedTop - (parseFloat(el.style.top) || 0)));
+
+                el.style.left = `${proposedLeft + snapDx}px`;
+                el.style.top = `${proposedTop + snapDy}px`;
+                useEditorStore.getState().dispatch({ type: "SET_SNAP_GUIDES", payload: snap.guides });
             };
 
             const onMouseUp = () => {
                 window.removeEventListener("mousemove", onMouseMove);
                 window.removeEventListener("mouseup", onMouseUp);
+                useEditorStore.getState().dispatch({ type: "SET_SNAP_GUIDES", payload: [] });
 
                 if (isDragging) {
                     const store = useEditorStore.getState();
@@ -208,6 +244,17 @@ export function SelectionControls({ nodeId }: { nodeId: string }) {
                 newTop = startTop + heightChange;
             }
 
+            const otherRects = getOtherRects(nodeId);
+            const wrapperCurRect = wrapper.getBoundingClientRect();
+            const proposedRect = {
+                left: wrapperCurRect.left + (newLeft - startLeft),
+                top: wrapperCurRect.top + (newTop - startTop),
+                width: newWidth,
+                height: newHeight,
+            };
+            const snap = computeSnap(proposedRect, otherRects);
+            useEditorStore.getState().dispatch({ type: "SET_SNAP_GUIDES", payload: snap.guides });
+
             target.style.width = `${newWidth}px`;
             target.style.height = `${newHeight}px`;
             wrapper.style.left = `${newLeft}px`;
@@ -219,6 +266,7 @@ export function SelectionControls({ nodeId }: { nodeId: string }) {
             window.removeEventListener("mousemove", onMouseMove);
             window.removeEventListener("mouseup", onMouseUp);
             setDimensions(null);
+            useEditorStore.getState().dispatch({ type: "SET_SNAP_GUIDES", payload: [] });
             const store = useEditorStore.getState();
             const originalNode = store.documentTree.nodes[nodeId];
             if (!originalNode) return;
@@ -247,6 +295,25 @@ export function SelectionControls({ nodeId }: { nodeId: string }) {
     };
 
     return (
+        <>
+        {/* Margin overlay - positioned outside the wrapper bounds */}
+        {(margins.top > 0 || margins.right > 0 || margins.bottom > 0 || margins.left > 0) && (
+            <div style={{
+                position: "absolute",
+                top: -margins.top,
+                left: -margins.left,
+                right: -margins.right,
+                bottom: -margins.bottom,
+                borderTop: margins.top > 0 ? `${margins.top}px solid rgba(255, 165, 0, 0.3)` : "none",
+                borderRight: margins.right > 0 ? `${margins.right}px solid rgba(255, 165, 0, 0.3)` : "none",
+                borderBottom: margins.bottom > 0 ? `${margins.bottom}px solid rgba(255, 165, 0, 0.3)` : "none",
+                borderLeft: margins.left > 0 ? `${margins.left}px solid rgba(255, 165, 0, 0.3)` : "none",
+                pointerEvents: "none",
+                zIndex: 998,
+                boxSizing: "border-box",
+            }} />
+        )}
+        {/* Padding overlay + resize handles */}
         <div style={{
             position: "absolute",
             top: 0,
@@ -288,5 +355,6 @@ export function SelectionControls({ nodeId }: { nodeId: string }) {
                 </div>
             )}
         </div>
+        </>
     );
 }

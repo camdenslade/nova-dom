@@ -3,6 +3,13 @@ import type { DocumentTree } from "../Schema/DocumentTree.ts";
 import type { AnyNode, NodeId } from "../Schema/Node.ts";
 import { create } from "zustand";
 
+export interface SnapGuide {
+    axis: "horizontal" | "vertical";
+    position: number;
+    start: number;
+    end: number;
+}
+
 export interface EditorState {
     documentTree: DocumentTree;
     selectedNodeId: NodeId | null;
@@ -11,6 +18,8 @@ export interface EditorState {
     draggingNodeId: NodeId | null
     dragOverNodeId: NodeId | null
     dragPosition: "before" | "after" | "inside" | null
+    snapGuides: SnapGuide[];
+    editingComponentId: string | null;
     history: DocumentTree[];
     historyIndex: number;
     dispatch: (action: EditorAction) => void;
@@ -28,7 +37,9 @@ export type EditorAction =
     | { type: "REDO" }
     | { type: "UPDATE_NODE"; payload: AnyNode }
     | { type: "ADD_NODE"; payload: AnyNode }
-    | { type: "DELETE_NODE"; payload: NodeId };
+    | { type: "DELETE_NODE"; payload: NodeId }
+    | { type: "SET_SNAP_GUIDES"; payload: SnapGuide[] }
+    | { type: "SET_EDITING_COMPONENT"; payload: string | null };
 
 function cloneDocumentTree(tree: DocumentTree): DocumentTree {
     return JSON.parse(JSON.stringify(tree));
@@ -71,6 +82,11 @@ function reducer(state: EditorState, action: EditorAction): EditorState {
         case "CLEAR_DRAG":
             return { ...state, draggingNodeId: null, dragOverNodeId: null, dragPosition: null };
 
+        case "SET_SNAP_GUIDES":
+            return { ...state, snapGuides: action.payload };
+
+        case "SET_EDITING_COMPONENT":
+            return { ...state, editingComponentId: action.payload };
 
         case "UNDO":
             if (state.historyIndex > 0) {
@@ -184,6 +200,8 @@ export const useEditorStore = create<EditorState>()((set) => ({
     draggingNodeId: null,
     dragOverNodeId: null,
     dragPosition: null,
+    snapGuides: [],
+    editingComponentId: null,
     history: [cloneDocumentTree(initialTree)],
     historyIndex: 0,
     dispatch: (action: EditorAction) => {
